@@ -9,7 +9,7 @@ import connectDB from "../DB/Db.js";
 dotenv.config();
 const app = express();
 app.use(cors({
-    origin: ["http://localhost:5173", "*"],
+    origin: ["http://localhost:5173", "https://mernstack-assesment.vercel.app"],
     credentials: true,
 }));
 
