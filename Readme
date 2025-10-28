@@ -1,0 +1,36 @@
+# MERN Stack Assessment – Role-Based Assignment Management System
+
+## Live Links
+
+- **Frontend (Vercel):** [https://mernstack-assesment.vercel.app](https://mernstack-assesment.vercel.app/auth/login)
+- **Backend (Render):** [https://mernstack-assesment-ctxa.onrender.com](https://mernstack-assesment-ctxa.onrender.com/)
+- **GitHub Repo:** [https://github.com/Nitin-lohumi/mernstack_Assesment](https://github.com/Nitin-lohumi/mernstack_Assesment)
+
+---
+
+## Overview
+
+This is a Role-Based Assignment Management System built with the MERN Stack.  
+It allows Teachers to create, update, and delete assignments, and Students to view and track them.  
+The project implements JWT authentication for secure role-based access and features a clean, responsive UI.
+
+---
+
+## Features
+
+- **Teacher Role:** Create, edit, and delete assignments
+- **Student Role:** View assignments with pagination
+- **Role-based authentication using JWT**
+- **UI with MUI, Tailwind CSS, and Framer Motion**
+- **Data stored on MongoDB Atls**
+- **Deployed on Vercel (Frontend) and Render (Backend)**
+
+---
+
+## Tech Stack
+
+**Frontend** React.js (Vite), Tailwind CSS, Material UI, Framer Motion
+**Backend** Node.js, Express.js
+**Database** MongoDB Atlas
+**Authentication** JSON Web Token (JWT)
+**Deployment** Vercel (Frontend), Render (Backend)
