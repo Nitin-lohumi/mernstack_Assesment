@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import router from "../routes/authRoute.js";
+import Assigmentrouter from "../routes/AssigmentRoute.js";
 import verifyToken from "../middleware/AuthMiddleWare.js";
 import connectDB from "../DB/Db.js";
 dotenv.config();
@@ -20,7 +21,7 @@ app.use("/api/auth", router);
 
 app.use(verifyToken);
 
-app.use("/api", router);
+app.use("/api", Assigmentrouter);
 
 app.get("/auth/check", (req, res) => {
     return res.json({ isLoggedIn: "true", user: req.user });

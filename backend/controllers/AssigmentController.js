@@ -1,12 +1,23 @@
 import Assignment from "../model/AssigmentModel.js";
-import UserData from "../model/userModal.js";
+import UserData from "../model/UserModel.js";
 export const createAssignment = async (req, res) => {
-  const { userId, title, description, subject, deadline } = req.body;
+  const { userid, title, description, subject, deadline } = req.body;
+  console.log(userid, title, description, subject, deadline)
   try {
-    const user = await UserData.findById(userId);
+    const user = await UserData.findById(userid);
     if (!user) return res.status(400).json({ message: "User not found" });
     if (user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied: Only teachers can create assignments" });
+    }
+    const currentDate = new Date();
+    const givenDeadline = new Date(deadline);
+    if (isNaN(givenDeadline)) {
+      return res.status(400).json({ message: "Invalid deadline format" });
+    }
+    if (givenDeadline <= currentDate) {
+      return res.status(400).json({
+        message: "Deadline must be a future date",
+      });
     }
     const assignment = new Assignment({
       userId: user._id,
@@ -23,10 +34,11 @@ export const createAssignment = async (req, res) => {
 };
 
 export const getAllAssignments = async (req, res) => {
-  const { userId } = req.params;
+  const { userid } = req.params;
   const { pageCount = 1 } = req.query;
+  console.log(userid, pageCount)
   try {
-    const user = await UserData.findById(userId);
+    const user = await UserData.findById(userid);
     if (!user) return res.status(401).json({ msg: "User not Available" });
     let assignments = await Assignment.find()
       .skip((Number(pageCount) - 1) * 5)
@@ -44,17 +56,32 @@ export const getAllAssignments = async (req, res) => {
 
 export const editAssignment = async (req, res) => {
   const { userId, assignmentId, title, description, subject, deadline } = req.body;
+  console.log(userId, assignmentId, title, description, subject, deadline)
   try {
     const user = await UserData.findById(userId);
     if (!user) return res.status(400).json({ message: "User not found" });
     if (user.role !== "teacher") {
       return res.status(403).json({ message: "Access denied: Only teachers can edit assignments" });
     }
+    if (deadline) {
+      const currentDate = new Date();
+      const givenDeadline = new Date(deadline);
+      if (isNaN(givenDeadline)) {
+        return res.status(400).json({ message: "Invalid deadline format" });
+      }
+      if (givenDeadline <= currentDate) {
+        return res.status(400).json({
+          message: "Deadline must be a future date",
+        });
+      }
+    }
+
     const updatedAssignment = await Assignment.findOneAndUpdate(
       { _id: assignmentId, userId: userId },
       { title, description, subject, deadline },
       { new: true }
     );
+
     if (!updatedAssignment)
       return res.status(404).json({ message: "Assignment not found" });
     res.json({
