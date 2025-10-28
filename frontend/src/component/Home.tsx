@@ -35,7 +35,6 @@ function Home() {
   const [open, setOpen] = useState(false);
   const params = new URLSearchParams();
   params.append("pageCount", pageCount.toString());
-  console.log(params.toString());
   const url = `/api/Assignment/${user?.id}?${params.toString()}`;
 
   const { data, isLoading, refetch } = useQuery({

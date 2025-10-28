@@ -2,7 +2,6 @@ import Assignment from "../model/AssigmentModel.js";
 import UserData from "../model/UserModel.js";
 export const createAssignment = async (req, res) => {
   const { userid, title, description, subject, deadline } = req.body;
-  console.log(userid, title, description, subject, deadline)
   try {
     const user = await UserData.findById(userid);
     if (!user) return res.status(400).json({ message: "User not found" });
@@ -36,7 +35,6 @@ export const createAssignment = async (req, res) => {
 export const getAllAssignments = async (req, res) => {
   const { userid } = req.params;
   const { pageCount = 1 } = req.query;
-  console.log(userid, pageCount)
   try {
     const user = await UserData.findById(userid);
     if (!user) return res.status(401).json({ msg: "User not Available" });
@@ -56,7 +54,6 @@ export const getAllAssignments = async (req, res) => {
 
 export const editAssignment = async (req, res) => {
   const { userId, assignmentId, title, description, subject, deadline } = req.body;
-  console.log(userId, assignmentId, title, description, subject, deadline)
   try {
     const user = await UserData.findById(userId);
     if (!user) return res.status(400).json({ message: "User not found" });
