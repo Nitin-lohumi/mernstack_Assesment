@@ -6,14 +6,14 @@ export default function RoleComp() {
   const { role, setRole } = useUserStore();
   return (
     <motion.div
-      className="flex  items-center justify-between h-fit gap-5 p-2 bg-gray-100"
+      className="flex md:flex-row items-center md:justify-between h-fit gap-5 p-2 bg-gray-50 flex-col-reverse"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <h1 className="text-xl font-serif">
+      <h1 className="text-xl flex font-serif items-center ">
         {role ? (
           <>
-            Login / signup as
+            <span>Login / signup as</span>
             <span className="text-2xl text-blue-600 capitalize p-2 underline leading-10">
               {role}
             </span>

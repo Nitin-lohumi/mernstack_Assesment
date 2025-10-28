@@ -1,7 +1,9 @@
 import { Outlet } from "react-router-dom";
 import Header from "./component/Header";
-
+import { useUserStore } from "../src/store/store";
 function App() {
+  const { role } = useUserStore();
+  console.log(role);
   return (
     <div className="flex flex-col w-full md:max-w-[1300px] mx-auto md:px-2 md:py-2 h-screen">
       <header className="w-full ">

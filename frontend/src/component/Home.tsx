@@ -1,173 +1,169 @@
 import { MdDeleteForever, MdEditSquare } from "react-icons/md";
 import Button from "@mui/material/Button";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API } from "./SignUp";
 import { toast } from "react-toastify";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useUserStore } from "../store/store";
-import { Editmodel } from "./EditModal";
 import { ClipLoader } from "react-spinners";
 import PopUp from "./PopUp";
-interface Taskdata {
-  complete: boolean;
+import { Editmodel } from "./EditModal";
+import AssignmentDetailModal from "./AssignmentDetailModal";
+
+interface Assignment {
   _id: string;
   userId: string;
-  content: string;
-  tags: string[];
   title: string;
+  description: string;
+  subject: string;
+  deadline: string;
 }
-function Home() {
-  const [tags, setTags] = useState<string[]>([]);
-  const query = useQueryClient();
-  const { user } = useUserStore();
-  const [taskData, setTaskData] = useState<Taskdata>();
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [extendedNotes, setExtendedNotes] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [notes, setNotes] = useState("");
-  const [pageCount, setPageCount] = useState(1);
 
-  const [deleted, setDelete] = useState("");
-  const [OpenPopUp, setOpenPopUp] = useState(false);
+function Home() {
+  const { user, role } = useUserStore();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [deadline, setDeadline] = useState("");
+
+  const [pageCount, setPageCount] = useState(1);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment>();
+  const [openEdit, setOpenEdit] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const [open, setOpen] = useState(false);
   const params = new URLSearchParams();
   params.append("pageCount", pageCount.toString());
+  console.log(params.toString());
+  const url = `/api/Assignment/${user?.id}?${params.toString()}`;
 
-  const url = `/api/task/${user?.id}?${params.toString()}`;
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["task", pageCount],
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["assignments"],
     queryFn: () => API.get(url),
     staleTime: 60 * 1000,
     enabled: !!user?.id,
   });
-
-  const mutate = useMutation({
+  const createMutation = useMutation({
     mutationFn: () =>
-      API.post("/api/task", {
-        content: notes,
-        userid: user?.id,
-        tag: tags,
+      API.post("/api/Assignment", {
         title,
+        description,
+        subject,
+        deadline,
+        userid: user?.id,
       }),
     onSuccess: () => {
-      query.invalidateQueries({ queryKey: ["task"] });
-      toast.success("Created a Note Sucessfully", { autoClose: 1000 });
-      setNotes("");
-      setTags([]);
+      refetch();
+      toast.success("Assignment created successfully");
       setTitle("");
+      setDescription("");
+      setSubject("");
+      setDeadline("");
     },
     onError: (error: any) => {
-      console.log(error);
-      toast.error(error?.response?.data?.message || "Something went wrong", {
-        autoClose: 2000,
-      });
+      toast.error(error?.response?.data?.message || "Something went wrong");
     },
   });
 
-  const handleCreateNote = async () => {
-    if (notes == "" || title == "") return;
-    mutate.mutate();
-  };
-
-  const deleteMutate = useMutation({
-    mutationFn: (noteId: string) =>
-      API.delete(`/api/task/${user?.id}/${noteId}`),
-    onSuccess: () => {
-      query.invalidateQueries({ queryKey: ["task"] });
-      toast.success("Note deleted successfully", { autoClose: 1000 });
-    },
-    onError: (error: any) => {
-      toast.error("Failed to delete note" + error?.response?.data?.message, {
-        autoClose: 2000,
-      });
-    },
-  });
-
-  const handleDelete = useCallback((noteId: string) => {
-    deleteMutate.mutate(noteId);
-  }, []);
-
-  const handlePopUp = (noteId: string) => {
-    setDelete(noteId);
-    setOpenPopUp(true);
-  };
-
-  const toggleExtend = (noteId: string) => {
-    setExtendedNotes((prev) => ({
-      ...prev,
-      [noteId]: !prev[noteId],
-    }));
-  };
-
-  const handleEdit = (v: Taskdata) => {
-    if (!v._id) {
-      return toast.error("task Id is not comming");
+  const handleCreate = () => {
+    if (!title || !description || !subject || !deadline) {
+      return toast.error("Please fill all fields!");
     }
-    setTaskData(v);
-    setOpen(true);
-  };
-  const CompleteMutation = useMutation({
-    mutationFn: async ({
-      taskId,
-      userId,
-    }: {
-      taskId: string;
-      userId: string;
-    }) => await API.patch(`/api/taskComplete/${userId}/${taskId}`),
-    onSuccess: () => {
-      query.invalidateQueries({ queryKey: ["task"] });
-      toast.success("task Completed ! congrats");
-    },
-    onError: (error: any) => {
-      toast.error(error.message);
-    },
-  });
-  const handleCompleteTask = (taskId: string) => {
-    if (!taskId || !user?.id) {
+    const now = new Date();
+    const selectedDeadline = new Date(deadline);
+    if (selectedDeadline <= now) {
+      toast.error("Deadline must be a future date");
       return;
     }
-    CompleteMutation.mutate({ taskId, userId: user?.id! });
+    createMutation.mutate();
   };
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => API.delete(`/api/Assignment/${user?.id}/${id}`),
+    onSuccess: () => {
+      refetch();
+      toast.success("Assignment deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Delete failed");
+    },
+  });
+
+  const handleDelete = useCallback((id: string) => {
+    deleteMutation.mutate(id);
+  }, []);
+
+  const handleOpenDelete = (id: string) => {
+    setDeleteId(id);
+    setOpenDelete(true);
+  };
+
+  const handleEdit = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setOpenEdit(true);
+  };
+
+  const handleShowModel = (assigment: Assignment) => {
+    setSelectedAssignment(assigment);
+    setOpen(true);
+  };
+  useEffect(() => {
+    if (pageCount) {
+      refetch();
+    }
+  }, [pageCount]);
   return (
     <div>
       <div className="shadow-gray-500 shadow-xs rounded-2xl mt-5">
+        <p className="pl-4 pb-1 p-2 text-md text-gray-600">
+          Role:{" "}
+          <span className="text-2xs capitalize text-gray-900">{role}</span>
+        </p>
         <div className="pl-3 pt-5 font-bold text-2xl">
-          Welcome , {user?.name}
+          Welcome, {user?.name}
         </div>
         <p className="pl-4 pt-4 pb-5 text-gray-500 text-xl">
-          email: {user?.email}
+          Email: {user?.email}
         </p>
       </div>
-      <div className="w-full p-2 mt-4">
-        <input
-          placeholder="Enter title of task"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full outline-none  border-gray-300 shadow shadow-gray-300 rounded-2xl 
-          text-xl pl-4 p-2"
-        />
 
-        <textarea
-          name="text"
-          value={notes}
-          id="text"
-          placeholder="Enter your tasks"
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          className="w-full outline-none  border-gray-300 shadow shadow-gray-300 rounded-2xl text-xl p-2 resize-none"
-        ></textarea>
-      </div>
+      {role === "teacher" && (
+        <div className="w-full p-2 mt-4 space-y-3">
+          <input
+            placeholder="Enter assignment title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full outline-none border-gray-300 shadow shadow-gray-300 rounded-2xl text-xl pl-4 p-2"
+          />
+          <textarea
+            name="description"
+            value={description}
+            placeholder="Enter assignment description"
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="w-full outline-none border-gray-300 shadow shadow-gray-300 rounded-2xl text-xl p-2 resize-none"
+          ></textarea>
+          <input
+            placeholder="Enter subject"
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full outline-none border-gray-300 shadow shadow-gray-300 rounded-2xl text-xl pl-4 p-2"
+          />
+          <input
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="w-full outline-none border-gray-300 shadow shadow-gray-300 rounded-2xl text-xl pl-4 p-2"
+          />
 
-      <div className="mt-2 p-2">
-        <Button variant="contained" onClick={handleCreateNote}>
-          Create Notes
-        </Button>
-      </div>
+          <Button variant="contained" onClick={handleCreate}>
+            Create Assignment
+          </Button>
+        </div>
+      )}
 
       {isLoading && (
         <ClipLoader
@@ -181,135 +177,128 @@ function Home() {
           }}
         />
       )}
-      <AnimatePresence>
-        {data?.data.tasks.length ? (
-          data?.data.tasks.map((v: Taskdata, i: number) => {
-            const isExtended = extendedNotes[v._id] || false;
-            const content = isExtended
-              ? v.content
-              : v.content.substring(0, 150);
-            return (
-              <motion.div
-                key={v._id}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                transition={{ duration: 0.5, delay: i * 0.05, ease: "easeOut" }}
-                layout
-                className={`pl-2 pr-2 rounded-xl mt-3  ${
-                  v.complete && "bg-green-100"
-                } flex flex-col shadow-sm shadow-gray-900`}
-              >
-                <div className="flex justify-between">
-                  <span className="text-xl font-bold font-serif p-2 capitalize">
-                    {v.title}
-                  </span>
-                  <span className="text-xl font-bold font-serif p-2 capitalize">
-                    status:{" "}
-                    <span
-                      className={`${
-                        v.complete ? "text-green-500" : "text-yellow-500"
-                      }`}
-                    >
-                      {v.complete ? "Completed" : "pending"}
-                    </span>
-                  </span>
-                </div>
-                <div className="w-full overflow-hidden flex flex-wrap text-wrap p-2 shadow-xs rounded-xl shadow-green-800">
-                  <p className="w-fit flex flex-wrap text-wrap">{content}</p>
-                  {v.content.length > 130 && "..."}
-                  <span
-                    onClick={() => toggleExtend(v._id)}
-                    className="inline-block font-bold text-xl text-blue-700 cursor-pointer text-nowrap"
-                  >
-                    {v.content.length < 150
-                      ? ""
-                      : isExtended
-                      ? " Hide"
-                      : " more"}
-                  </span>
-                </div>
 
-                <div className="flex gap-10 p-2 justify-between items-center">
-                  <div
-                    className={`md:flex items-center md:p-1 rounded-xl md:gap-2 gap-5`}
-                  >
-                    <button
-                      className={`md:pl-3 border-green-500 border font-semibold pr-3 p-2 mb-3 md:mb-0 rounded-xl cursor-pointer   ${
-                        v.complete && "bg-green-700 text-white"
-                      } text-black`}
-                      disabled={v.complete}
-                      onClick={() => handleCompleteTask(v._id)}
-                    >
-                      {v.complete ? "Done " : "complete"}
-                    </button>
-                    <br />
-                  </div>
-                  <div className="flex items-center w-full md:w-fit">
-                    <div
-                      className="cursor-pointer m-2 w-full"
+      <AnimatePresence>
+        {data?.data?.assignments?.length ? (
+          data.data.assignments.map((v: Assignment, i: number) => (
+            <motion.div
+              key={v._id}
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              layout
+              className="p-4 rounded-xl cursor-pointer  mt-4 shadow-lg shadow-gray-900 mb-3 border border-gray-400 bg-white"
+            >
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold capitalize">{v.title}</h2>
+                {role === "teacher" && (
+                  <div className="flex gap-3 z-50">
+                    <MdEditSquare
+                      size={26}
+                      color="blue"
+                      className="cursor-pointer"
                       onClick={() => handleEdit(v)}
-                    >
-                      <MdEditSquare size={26} color="blue" />
-                    </div>
-                    <div
-                      className="cursor-pointer  m-2 w-full"
-                      onClick={() => handlePopUp(v._id)}
-                    >
-                      <MdDeleteForever size={26} color="red" />
-                    </div>
+                    />
+                    <MdDeleteForever
+                      size={26}
+                      color="red"
+                      className="cursor-pointer"
+                      onClick={() => handleOpenDelete(v._id)}
+                    />
                   </div>
-                </div>
-              </motion.div>
-            );
-          })
+                )}
+              </div>
+              <p className="text-gray-700 mt-2">
+                {v.description.length > 60
+                  ? v.description.slice(0, 60)
+                  : v.description}
+                {v.description.length > 60 && (
+                  <span className="font-serif pl-2">{" ...more"}</span>
+                )}
+              </p>
+              <p className="text-gray-700 mt-1 capitalize">
+                Subject: <span className="font-thin">{v.subject}</span>
+              </p>
+              <p className="text-gray-700 mt-1 capitalize">
+                Deadline:{" "}
+                <span
+                  className={`font-medium ${
+                    new Date(v.deadline) < new Date()
+                      ? "text-red-500"
+                      : "text-green-400"
+                  }`}
+                >
+                  {new Date(v.deadline).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </span>
+              </p>
+              <p
+                className="pt-1 pb-1 text-blue-700 capitalize font-serif cursor-pointer"
+                onClick={() => {
+                  handleShowModel(v);
+                }}
+              >
+                show
+              </p>
+            </motion.div>
+          ))
         ) : (
-          <>NO Task is available</>
+          <p className="text-center mt-10 text-gray-500 text-lg mb-7">
+            No Assignments Available yet
+          </p>
         )}
       </AnimatePresence>
-      {data?.data?.tasks?.length > 0 && (
-        <div className="flex justify-evenly p-1 mt-2">
+
+      {data?.data?.assignments?.length > 0 && (
+        <div className="flex justify-evenly p-3 mt-2">
           <button
             disabled={pageCount === 1}
             onClick={() => {
               setPageCount((prev) => prev - 1);
-              query.invalidateQueries({ queryKey: ["task"] });
             }}
-            className={`pl-3 p-2 pr-3 rounded-xl text-white 
-      ${
-        pageCount === 1
-          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-          : "bg-gray-600 cursor-pointer"
-      }`}
+            className={`pl-3 p-2 pr-3 rounded-xl text-white ${
+              pageCount === 1
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-gray-600 cursor-pointer"
+            }`}
           >
-            prev
+            Prev
           </button>
 
           <button
             disabled={!data?.data.next}
-            onClick={() => {
-              setPageCount((prev) => prev + 1);
-              query.invalidateQueries({ queryKey: ["task"] });
-            }}
-            className={`pl-3 p-2 pr-3 rounded-xl text-white 
-      ${
-        !data?.data.next
-          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-          : "bg-gray-600 cursor-pointer"
-      }`}
+            onClick={() => setPageCount((prev) => prev + 1)}
+            className={`pl-3 p-2 pr-3 rounded-xl text-white ${
+              !data?.data.next
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-gray-600 cursor-pointer"
+            }`}
           >
-            next
+            Next
           </button>
         </div>
       )}
 
-      <Editmodel setOpen={setOpen} open={open} taskdata={taskData!} />
-
+      <Editmodel
+        setOpen={setOpenEdit}
+        open={openEdit}
+        userId={user?.id!}
+        assignment={selectedAssignment!}
+      />
       <PopUp
-        DeleteId={deleted}
+        DeleteId={deleteId}
         handleDelete={handleDelete}
-        isOpen={OpenPopUp}
-        setOpen={setOpenPopUp}
+        isOpen={openDelete}
+        setOpen={setOpenDelete}
+      />
+      <AssignmentDetailModal
+        open={open}
+        setOpen={setOpen}
+        assignment={selectedAssignment!}
       />
     </div>
   );

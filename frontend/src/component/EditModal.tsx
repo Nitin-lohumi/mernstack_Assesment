@@ -6,131 +6,136 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Checkbox,
-  FormControlLabel,
 } from "@mui/material";
 import { API } from "./SignUp";
 import { toast } from "react-toastify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-interface Taskdata {
-  complete: boolean;
+
+interface AssignmentData {
   _id: string;
   userId: string;
-  content: string;
-  tags: string[];
   title: string;
+  description: string;
+  subject: string;
+  deadline: string;
 }
+
 export const Editmodel = React.memo(
   ({
     setOpen,
     open,
-    taskdata,
+    assignment,
+    userId,
   }: {
     setOpen: (isTrue: boolean) => void;
     open: boolean;
-    taskdata: Taskdata;
+    assignment: AssignmentData;
+    userId: String;
   }) => {
-    const [tagval, setTagval] = useState<string[]>([]);
-    const [taskContent, setTaskContent] = useState("");
     const [title, setTitle] = useState("");
-    const [checked, setChecked] = useState(false);
+    const [description, setDescription] = useState("");
+    const [subject, setSubject] = useState("");
+    const [deadline, setDeadline] = useState("");
     const queryClient = useQueryClient();
-    useEffect(() => {
-      if (taskdata) {
-        setTitle(taskdata.title);
-        setTaskContent(taskdata.content);
-        setTagval(taskdata.tags || []);
-        setChecked(taskdata.complete);
-      }
-    }, [taskdata]);
 
-    const updateTask = useMutation({
-      mutationFn: ({ data }: { data: any }) =>
-        API.patch(`/api/taskEdit/`, data),
+    useEffect(() => {
+      if (assignment) {
+        setTitle(assignment.title);
+        setDescription(assignment.description);
+        setSubject(assignment.subject);
+        setDeadline(assignment.deadline.slice(0, 10));
+      }
+    }, [assignment]);
+
+    const updateAssignment = useMutation({
+      mutationFn: async (data: any) => API.patch(`/api/AssignmentEdit`, data),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["task"] });
+        queryClient.invalidateQueries({ queryKey: ["assignments"] });
+        toast.success("Assignment updated successfully!");
         setOpen(false);
       },
       onError: (error: any) => {
-        toast.error(error?.message);
-        setOpen(true);
+        toast.error(error?.response?.data?.message || "Update failed");
       },
     });
 
-    const handleClose = () => setOpen(false);
     const handleSave = () => {
-      if (!title || !taskContent) {
-        return toast.info("fill the missing blanks");
-      }
+      if (!title || !description || !subject || !deadline || !userId)
+        return toast.info("Please fill all fields");
       if (
-        title == taskdata.title &&
-        taskContent == taskdata.content &&
-        checked == taskdata.complete &&
-        taskdata.tags.every((v, i) => v == tagval[i]) &&
-        tagval.every((v, i) => v == taskdata.tags[i])
+        title == assignment.title &&
+        description == assignment.description &&
+        subject == assignment.subject &&
+        deadline == assignment.deadline.slice(0, 10)
       ) {
+        console.log("aca");
         setOpen(false);
         return;
       }
-
-      const Values = {
-        userId: taskdata.userId,
-        TaskId: taskdata._id,
-        complete: checked,
-        content: taskContent,
-        tags: tagval,
-        title: title,
+      const data = {
+        assignmentId: assignment._id,
+        title,
+        description,
+        subject,
+        deadline,
+        userId: userId,
       };
-      updateTask.mutate({ data: Values });
-    };
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setChecked(event.target.checked);
+      updateAssignment.mutate(data);
     };
 
     return (
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-        <DialogTitle className="flex gap-2 items-center">
-          <span>Edit:</span>
-          <span className="text-xl text-green-500 capitalize">
-            {taskdata?.title}
-          </span>
-          <span>Task</span>
-        </DialogTitle>
-        <DialogContent className="flex flex-col  mt-2 gap-4">
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Edit Assignment</DialogTitle>
+        <DialogContent className="flex flex-col gap-4 mt-2">
           <TextField
-            label="Task Title"
-            className="!mt-2"
+            label="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             variant="outlined"
             fullWidth
           />
-
           <TextField
-            label="Task Content"
-            value={taskContent}
-            onChange={(e) => setTaskContent(e.target.value)}
+            label="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            multiline
+            rows={4}
             variant="outlined"
             fullWidth
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={checked}
-                onChange={handleChange}
-                color="primary"
-              />
-            }
-            label="completed"
+          <TextField
+            label="Subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            variant="outlined"
+            fullWidth
+          />
+          <TextField
+            label="Deadline"
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            variant="outlined"
+            fullWidth
           />
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={handleClose} color="info">
+          <Button onClick={() => setOpen(false)} color="info">
             Cancel
           </Button>
-          <Button onClick={handleSave} variant="contained" color="primary">
-            {updateTask.isPending ? "saving..." : "save"}
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            disabled={updateAssignment.isPending}
+          >
+            {updateAssignment.isPending ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

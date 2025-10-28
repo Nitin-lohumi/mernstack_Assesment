@@ -8,7 +8,7 @@ interface UserState {
   user: User | null;
   role: "teacher" | "student" | null;
   loading: boolean;
-  setRole: (role: string) => void;
+  setRole: (role: string | null) => void;
   setUser: (user: User) => void;
   logoutUser: () => void;
 }
@@ -27,5 +27,5 @@ export const useUserStore = create<UserState>((set) => ({
       user: null,
       loading: false,
     }),
-  setRole: (type) => set({ role: type as "teacher" | "student" }),
+  setRole: (type) => set({ role: type as "teacher" | "student" | null }),
 }));

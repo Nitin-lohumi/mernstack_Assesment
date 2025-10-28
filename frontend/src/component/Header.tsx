@@ -2,8 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { API } from "./SignUp";
 import { toast } from "react-toastify";
 import { useUserStore } from "../store/store";
+import { motion } from "framer-motion";
 function Header() {
-  const { logoutUser } = useUserStore();
+  const { logoutUser, setRole } = useUserStore();
   const navigate = useNavigate();
   const handleSignout = async () => {
     try {
@@ -20,12 +21,16 @@ function Header() {
       <div className="flex justify-center items-center">
         <p className="text-xl md:font-semibold font-bold"></p>
       </div>
-      <div
-        className="text-blue-600 underline cursor-pointer"
-        onClick={handleSignout}
+      <motion.div
+        whileHover={{ scale: 1.1, color: "red" }}
+        className="text-blue-600 cursor-pointer border pl-2 pr-2 p-1 rounded-xl"
+        onClick={() => {
+          handleSignout();
+          setRole(null);
+        }}
       >
         signout
-      </div>
+      </motion.div>
     </div>
   );
 }

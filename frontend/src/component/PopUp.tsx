@@ -32,16 +32,16 @@ const PopUp = React.memo(
           fullWidth
           maxWidth="md"
         >
-          <DialogTitle className="!text-xl !font-bold !capitalize !underline">
-            Delete Task
+          <DialogTitle className="text-xl! font-bold! capitalize! underline!">
+            Delete assigment
           </DialogTitle>
 
           <DialogContent>
-            <DialogTitle className="!text-xl !font-bold !text-center">
-              Are you Sure! Delete This Task
+            <DialogTitle className="text-xl! font-bold! text-center!">
+              Are you Sure! Delete This Assigment
             </DialogTitle>
           </DialogContent>
-          <DialogActions className="!flex !justify-between">
+          <DialogActions className="flex! justify-between!">
             <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={handle_DeleteTask}>Delete</Button>
           </DialogActions>

@@ -5,7 +5,7 @@ import { useUserStore } from "../store/store";
 import { ClipLoader } from "react-spinners";
 export default function PrivateRoute({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState("");
-  const { setUser, logoutUser } = useUserStore();
+  const { setUser, logoutUser, setRole } = useUserStore();
   useEffect(() => {
     axios
       .get("http://localhost:4000/auth/check", {
@@ -13,10 +13,13 @@ export default function PrivateRoute({ children }: { children: ReactNode }) {
       })
       .then((res) => {
         setUser(res.data.user);
+        console.log(res.data);
+        setRole(res.data.user.role);
         return setAuth(res.data.user);
       })
       .catch(() => {
         logoutUser();
+        setRole(null);
         return setAuth("false");
       });
   }, []);

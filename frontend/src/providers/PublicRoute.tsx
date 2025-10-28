@@ -5,7 +5,7 @@ import axios from "axios";
 import { useUserStore } from "../store/store";
 export default function PublicRoute({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { setUser, logoutUser } = useUserStore();
+  const { setUser, logoutUser, setRole } = useUserStore();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     axios
@@ -15,6 +15,8 @@ export default function PublicRoute({ children }: { children: ReactNode }) {
       .then((res) => {
         if (res.data.isLoggedIn) {
           setUser(res.data.user);
+          console.log(res.data);
+          setRole(res.data.user.role);
           navigate("/");
         }
         setLoading(false);
