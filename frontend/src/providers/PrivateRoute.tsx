@@ -8,7 +8,7 @@ export default function PrivateRoute({ children }: { children: ReactNode }) {
   const { setUser, logoutUser, setRole } = useUserStore();
   useEffect(() => {
     axios
-      .get("http://localhost:4000/auth/check", {
+      .get("https://mernstack-assesment-ctxa.onrender.com/auth/check", {
         withCredentials: true,
       })
       .then((res) => {

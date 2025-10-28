@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useUserStore } from "../store/store";
 export const API = axios.create({
-  baseURL: "http://localhost:4000",
+  baseURL: "https://mernstack-assesment-ctxa.onrender.com/",
   withCredentials: true,
 });
 function SignUp() {

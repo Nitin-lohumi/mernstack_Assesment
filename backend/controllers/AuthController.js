@@ -33,7 +33,7 @@ export const verifySignup = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7,
-            sameSite: "lax",
+            sameSite: "none",
             secure: process.env.NODE_ENV === "production",
         });
         return res.status(201).json({
@@ -73,7 +73,7 @@ export const verifyLogin = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24 * 7,
-            sameSite: "lax",
+            sameSite: "none",
             secure: process.env.NODE_ENV === "production",
         });
         return res.status(200).json({
